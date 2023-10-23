@@ -1,4 +1,6 @@
 using System;
+using NBitcoin;
+using NBitcoin.Protocol.Behaviors;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
@@ -7,13 +9,13 @@ namespace NBXplorer
 {
 	public class ChainBlockMessage
 	{
-		public ChainBlockMessage(NBXplorerNetwork network, RawBlockEvent evt)
+		public ChainBlockMessage(NBXplorerNetwork network, SlimChainedBlock block, Block rawBlock)
 		{
 			this.Network = $"NETWORK_{network.CryptoCode.ToUpper()}";
-			this.BlockHeight = (ulong) evt.Block.GetWeight();
-			this.BlockHash = evt.Block.GetHash()?.ToString();
-			this.ParentBlockHash = null;
-			this.BlockTime = evt.Block.Header.BlockTime.DateTime;
+			this.BlockHeight = (ulong) block.Height;
+			this.BlockHash = block.Hash.ToString();
+			this.ParentBlockHash = block.Previous.ToString();
+			this.BlockTime = rawBlock.Header.BlockTime.DateTime;
 		}
 		
 		/// <summary>
