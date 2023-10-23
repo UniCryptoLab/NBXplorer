@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using Microsoft.Extensions.Logging;
 
 namespace NBXplorer
 {
@@ -60,6 +61,7 @@ namespace NBXplorer
 					return v;
 				var settings = new NBXplorerDefaultSettings();
 				settings.DefaultDataDirectory = GetDirectory("NBXplorer", GetFolderName(networkType), false);
+				Console.WriteLine($" ---> default data directory: {settings.DefaultDataDirectory}");
 				settings.DefaultConfigurationFile = Path.Combine(settings.DefaultDataDirectory, "settings.config");
 				settings.DefaultCookieFile = Path.Combine(settings.DefaultDataDirectory, ".cookie");
 				settings.DefaultPort = (networkType == ChainName.Mainnet ? 24444 :
