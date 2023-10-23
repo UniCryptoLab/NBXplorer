@@ -220,7 +220,10 @@ namespace NBXplorer.Backends.DBTrie
 			var now = DateTimeOffset.UtcNow;
 			var matches = (await Repository.GetMatches(transaction, null, now, false)).ToArray();
 			await SaveMatches(matches, null, now, fireEvents);
+			//send raw transaction event
+			_EventAggregator.Publish(new RawTransactionEvent(transaction, this.Network), true);
 		}
+		
 		private async Task SaveMatches(TrackedTransaction[] matches, SlimChainedBlock slimBlock, DateTimeOffset now, bool fireEvents)
 		{
 			await Repository.SaveMatches(matches);

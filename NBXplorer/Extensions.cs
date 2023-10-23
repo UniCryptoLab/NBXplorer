@@ -248,6 +248,10 @@ namespace NBXplorer
 				return c.NetworkProvider;
 			});
 			services.TryAddSingleton<IRPCClients>();
+			
+			//service used in unipayment.
+			services.AddHostedService<PublisherService>();
+			
 			return services;
 		}
 
