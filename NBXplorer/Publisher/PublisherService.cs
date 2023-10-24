@@ -41,7 +41,7 @@ namespace NBXplorer
 				.Select(t => t.ToUpperInvariant());
 
 			ZmqPubPort = configuration.GetOrDefault<int>("zmq_pub_port", 2000);
-			ZmqSendHighWatermark = configuration.GetOrDefault<int>("zmq_pub_port", 50000);
+			ZmqSendHighWatermark = configuration.GetOrDefault<int>("zmq_pub_hwm", 50000);
 
 			PubChain = supportedChains.FirstOrDefault();
 			if (string.IsNullOrEmpty(PubChain))
@@ -68,11 +68,8 @@ namespace NBXplorer
 
 		protected override void SubscribeToEvents()
 		{
-
 			Subscribe<RawBlockEvent>();
-			Subscribe<Models.NewBlockEvent>();
 			Subscribe<RawTransactionEvent>();
-
 		}
 
 		private PublisherSocket PubSocket = null;
@@ -108,10 +105,21 @@ namespace NBXplorer
 
 		protected override Task ProcessEvent(object evt, CancellationToken cancellationToken)
 		{
-			//区块事件
-			if (evt is RawBlockEvent rawBlockEvent)
+			if (evt is RawTransactionEvent transactionEvent)
 			{
-
+				int i = 0;
+				foreach (var output in transactionEvent.Transaction.Outputs)
+				{
+					var txn = new ChainTransactionMessage(this.Network, transactionEvent.Transaction, output, i);
+					var msg =
+						$"NETWORK_{this.Network.CryptoCode.ToUpper()}|TRANSACTION|{this.Network.CryptoCode}|{JsonConvert.SerializeObject(txn)}";
+					PubSocket.SendFrame(msg);
+					i++;
+				}
+				//Logger.LogInformation($"txn: {transactionEvent.Transaction.GetHash()?.ToString()}");
+			}
+			else if (evt is RawBlockEvent rawBlockEvent)
+			{
 				var slimBlockHeader = Chain.GetBlock(rawBlockEvent.Block.GetHash());
 				var block = new ChainBlockMessage(this.Network, slimBlockHeader, rawBlockEvent.Block);
 				var msg = $"NETWORK_{this.Network.CryptoCode.ToUpper()}|BLOCK||{JsonConvert.SerializeObject(block)}";
@@ -134,23 +142,7 @@ namespace NBXplorer
 					}
 					//Logger.LogInformation($"txn: {item.GetHash()?.ToString()} - {block.BlockHeight}");
 				}
-
 			}
-			else if (evt is RawTransactionEvent transactionEvent)
-			{
-
-				int i = 0;
-				foreach (var output in transactionEvent.Transaction.Outputs)
-				{
-					var txn = new ChainTransactionMessage(this.Network, transactionEvent.Transaction, output, i);
-					var msg =
-						$"NETWORK_{this.Network.CryptoCode.ToUpper()}|TRANSACTION|{this.Network.CryptoCode}|{JsonConvert.SerializeObject(txn)}";
-					PubSocket.SendFrame(msg);
-					i++;
-				}
-				//Logger.LogInformation($"txn: {transactionEvent.Transaction.GetHash()?.ToString()}");
-			}
-
 			return Task.CompletedTask;
 		}
 	}
